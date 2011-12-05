@@ -28,6 +28,7 @@ const _ = Gettext.gettext;
 // Settings
 const DOCK_SETTINGS_SCHEMA = 'org.gnome.shell.extensions.dock';
 const DOCK_POSITION_KEY = 'position';
+const DOCK_MONITOR_KEY = 'monitor';
 const DOCK_SIZE_KEY = 'size';
 const DOCK_HIDE_KEY = 'autohide';
 const DOCK_EFFECTHIDE_KEY = 'hide-effect';
@@ -49,6 +50,7 @@ const AutoHideEffect = {
     MOVE: 2
 };
 
+let displayMonitor = -1;
 let position = PositionMode.RIGHT;
 let dockicon_size = 48;
 let hideable = true;
@@ -62,7 +64,10 @@ const DND_RAISE_APP_TIMEOUT = 500;
 /*************************************************************************************/
 function hideDock_size () {
     if (hideable){
-       let monitor = Main.layoutManager.primaryMonitor
+       let monitor = Main.layoutManager.primaryMonitor;
+        if (displayMonitor > -1 && displayMonitor < Main.layoutManager.monitors.length) {
+          monitor = Main.layoutManager.monitors[displayMonitor];
+        }
        let position_x = monitor.x;
        let height = (this._nicons)*(this._item_size + this._spacing) + 2*this._spacing;
        let width = this._item_size + 4*this._spacing;
@@ -92,6 +97,9 @@ function hideDock_size () {
 
 function showDock_size () {
      let monitor = Main.layoutManager.primaryMonitor;
+        if (displayMonitor > -1 && displayMonitor < Main.layoutManager.monitors.length) {
+          monitor = Main.layoutManager.monitors[displayMonitor];
+        }
      let height = (this._nicons)*(this._item_size + this._spacing) + 2*this._spacing;
      let width = this._item_size + 4*this._spacing;
      let position_x = monitor.x;
@@ -143,6 +151,9 @@ function showEffectAddItem_size () {
 function hideDock_scale () {
        this._item_size = dockicon_size;
        let monitor = Main.layoutManager.primaryMonitor;
+        if (displayMonitor > -1 && displayMonitor < Main.layoutManager.monitors.length) {
+          monitor = Main.layoutManager.monitors[displayMonitor];
+        }
        let cornerX = 0;
        let height = this._nicons*(this._item_size + this._spacing) + 2*this._spacing;
        let width = this._item_size + 4*this._spacing;
@@ -173,6 +184,9 @@ function hideDock_scale () {
 function showDock_scale () {
         this._item_size = dockicon_size;
         let monitor = Main.layoutManager.primaryMonitor;
+        if (displayMonitor > -1 && displayMonitor < Main.layoutManager.monitors.length) {
+          monitor = Main.layoutManager.monitors[displayMonitor];
+        }
         let position_x = monitor.x;
         let height = this._nicons*(this._item_size + this._spacing) + 2*this._spacing;
         let width = this._item_size + 4*this._spacing;
@@ -199,6 +213,9 @@ function showDock_scale () {
 
 function initShowDock_scale () {
         let primary = Main.layoutManager.primaryMonitor;
+        if (displayMonitor > -1 && displayMonitor < Main.layoutManager.monitors.length) {
+          primary = Main.layoutManager.monitors[displayMonitor];
+        }
         let height = this._nicons*(this._item_size + this._spacing) + 2*this._spacing;
         let width = this._item_size + 4*this._spacing;
 
@@ -342,6 +359,7 @@ Dock.prototype = {
         // Load Settings
         this._settings = new Gio.Settings({ schema: DOCK_SETTINGS_SCHEMA });
         position = this._settings.get_enum(DOCK_POSITION_KEY);
+        displayMonitor = this._settings.get_int(DOCK_MONITOR_KEY);
         dockicon_size = this._settings.get_int(DOCK_SIZE_KEY);
         hideDock = hideable = this._settings.get_boolean(DOCK_HIDE_KEY);
         hideEffect = this._settings.get_enum(DOCK_EFFECTHIDE_KEY);
