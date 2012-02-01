@@ -10,6 +10,7 @@ const Clutter = imports.gi.Clutter;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
+const GLib = imports.gi.GLib;
 const Lang = imports.lang;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
@@ -25,9 +26,9 @@ const N_ = function(e) { return e };
 
 const POPUP_DELAY_TIMEOUT = 150; // milliseconds
 
-const SETTINGS_SCHEMA = 'org.gnome.shell.extensions.alternate-tab';
-const SETTINGS_BEHAVIOUR_KEY = 'behaviour';
-const SETTINGS_FIRST_TIME_KEY = 'first-time';
+// Settings: choose one of MODES, the description is in MESSAGE
+// (master branch has a nice dialog, but we cannot in gnome 3.2)
+const BEHAVIOUR = 'all_thumbnails';
 
 const MODES = {
     all_thumbnails: function(shellwm, binding, mask, window, backwards) {
@@ -266,6 +267,8 @@ WindowSwitcher.prototype = {
     }
 };
 
+/* This object is never instantiated in the current branch, but
+   I don't trust git merge enough to remove it */
 function AltTabSettingsDialog() {
     this._init();
 }
@@ -462,7 +465,6 @@ AltTabPopup2.prototype = {
 	return true
     },
 
-/*
     _keyPressEvent : function(actor, event) {
         let keysym = event.get_key_symbol();
         let shift = (Shell.get_event_state(event) & Clutter.ModifierType.SHIFT_MASK);
@@ -508,7 +510,6 @@ AltTabPopup2.prototype = {
 
         return true;
     },
-*/
 
     _sortWindows : function(win1,win2) {
         let t1 = win1.get_user_time();
@@ -599,29 +600,22 @@ function init(metadata) {
 }
 
 function doAltTab(shellwm, binding, mask, window, backwards) {
-    let settings = new Gio.Settings({ schema: SETTINGS_SCHEMA });
-
-
-    if(settings.get_boolean(SETTINGS_FIRST_TIME_KEY)) {
-        new AltTabSettingsDialog().open();
-    } else {
-        let behaviour = settings.get_string(SETTINGS_BEHAVIOUR_KEY);
-        if(behaviour in MODES) {
-            MODES[behaviour](shellwm, binding, mask, window, backwards);
-        }
+    let behaviour = BEHAVIOUR;
+    if(behaviour in MODES) {
+        MODES[behaviour](shellwm, binding, mask, window, backwards);
     }
 }
 
 function enable() {
-    Main.wm.setKeybindingHandler('switch-windows', doAltTab);
-    Main.wm.setKeybindingHandler('switch-group', doAltTab);
-    Main.wm.setKeybindingHandler('switch-windows-backward', doAltTab);
-    Main.wm.setKeybindingHandler('switch-group-backward', doAltTab);
+    Main.wm.setKeybindingHandler('switch_windows', doAltTab);
+    Main.wm.setKeybindingHandler('switch_group', doAltTab);
+    Main.wm.setKeybindingHandler('switch_windows_backward', doAltTab);
+    Main.wm.setKeybindingHandler('switch_group_backward', doAltTab);
 }
 
 function disable() {
-    Main.wm.setKeybindingHandler('switch-windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
-    Main.wm.setKeybindingHandler('switch-group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
-    Main.wm.setKeybindingHandler('switch-windows-backward', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
-    Main.wm.setKeybindingHandler('switch-group-backward', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Main.wm.setKeybindingHandler('switch_windows', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Main.wm.setKeybindingHandler('switch_group', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Main.wm.setKeybindingHandler('switch_windows_backward', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
+    Main.wm.setKeybindingHandler('switch_group_backward', Lang.bind(Main.wm, Main.wm._startAppSwitcher));
 }

@@ -25,19 +25,6 @@ const AltTab = imports.ui.altTab;
 const Gettext = imports.gettext.domain('gnome-shell-extensions');
 const _ = Gettext.gettext;
 
-// Settings
-const DOCK_SETTINGS_SCHEMA = 'org.gnome.shell.extensions.dock';
-const DOCK_POSITION_KEY = 'position';
-const DOCK_MONITOR_KEY = 'monitor';
-const DOCK_SIZE_KEY = 'size';
-const DOCK_HIDE_KEY = 'autohide';
-const DOCK_EFFECTHIDE_KEY = 'hide-effect';
-const DOCK_AUTOHIDE_ANIMATION_TIME_KEY = 'hide-effect-duration';
-
-
-//hide
-//const autohide_animation_time = 0.3;
-
 // Keep enums in sync with GSettings schemas
 const PositionMode = {
     LEFT: 0,
@@ -50,13 +37,23 @@ const AutoHideEffect = {
     MOVE: 2
 };
 
-let displayMonitor = -1;
+// Settings
+const DOCK_POSITION = PositionMode.RIGHT;
+const DOCK_SIZE = 48;
+const DOCK_AUTOHIDE = true;
+const DOCK_EFFECTHIDE = AutoHideEffect.MOVE;
+const DOCK_AUTOHIDE_ANIMATION_TIME = 0.3;
+const DISPLAY_MONITOR = 1;
+// Do not change anything below this line (it is intentionally duplicate to keep in
+// sync with master branch)
+
 let position = PositionMode.RIGHT;
 let dockicon_size = 48;
 let hideable = true;
 let hideDock = true;
 let hideEffect = AutoHideEffect.RESIZE;
 let autohide_animation_time = 0.3;
+let displayMonitor = -1;
 const DND_RAISE_APP_TIMEOUT = 500;
 
 /*************************************************************************************/
@@ -357,16 +354,12 @@ Dock.prototype = {
         this._favorites = [];
 
         // Load Settings
-        this._settings = new Gio.Settings({ schema: DOCK_SETTINGS_SCHEMA });
-        position = this._settings.get_enum(DOCK_POSITION_KEY);
-        displayMonitor = this._settings.get_int(DOCK_MONITOR_KEY);
-        dockicon_size = this._settings.get_int(DOCK_SIZE_KEY);
-        hideDock = hideable = this._settings.get_boolean(DOCK_HIDE_KEY);
-        hideEffect = this._settings.get_enum(DOCK_EFFECTHIDE_KEY);
-        autohide_animation_time = this._settings.get_double(DOCK_AUTOHIDE_ANIMATION_TIME_KEY);
-        //global.log("POSITION: " + position);
-        //global.log("dockicon_size: " + dockicon_size);
-
+        position = DOCK_POSITION;
+        dockicon_size = DOCK_SIZE;
+        hideDock = hideable = DOCK_AUTOHIDE;
+        hideEffect = DOCK_EFFECTHIDE;
+        autohide_animation_time = DOCK_AUTOHIDE_ANIMATION_TIME;
+        displayMonitor = DISPLAY_MONITOR;
 
         this._spacing = 4;
         this._item_size = dockicon_size;
@@ -398,73 +391,7 @@ Dock.prototype = {
         this._overviewHiddenId = Main.overview.connect('hidden', Lang.bind(this, function() {
             this.actor.show();
         }));
-        Main.layoutManager.addChrome(this.actor);
-
-        //hidden
-        this._settings.connect('changed::'+DOCK_POSITION_KEY, Lang.bind(this, function (){
-                if (!this._settings)
-                    return;
-
-                let primary = Main.layoutManager.primaryMonitor;
-                position = this._settings.get_enum(DOCK_POSITION_KEY);
-                this.actor.y=primary.y;
-                this._redisplay();
-        }));
-
-        this._settings.connect('changed::'+DOCK_SIZE_KEY, Lang.bind(this, function (){
-                if (!this._settings)
-                    return;
-
-                dockicon_size = this._settings.get_int(DOCK_SIZE_KEY);
-                this._redisplay();
-        }));
-
-        this._settings.connect('changed::'+DOCK_HIDE_KEY, Lang.bind(this, function (){
-                if (!this._settings)
-                    return;
-
-                hideable = this._settings.get_boolean(DOCK_HIDE_KEY);
-                if (hideable){
-                        hideDock=false;
-                        this._hideDock();
-                } else {
-                        hideDock=true;
-                        this._showDock();
-                }
-        }));
-
-        this._settings.connect('changed::'+DOCK_EFFECTHIDE_KEY, Lang.bind(this, function () {
-                if (!this._settings)
-                    return;
-
-                hideEffect = this._settings.get_enum(DOCK_EFFECTHIDE_KEY);
-
-                switch (hideEffect) {
-                        case AutoHideEffect.RESCALE:
-                           this._item_size=dockicon_size;
-                           break;
-                        case AutoHideEffect.RESIZE:
-                           this.actor.set_scale (1,1);
-                           break;
-                        case AutoHideEffect.MOVE:
-                           ;
-                }
-                this.actor.disconnect(this._leave_event);
-                this.actor.disconnect(this._enter_event);
-
-                this._selectFunctionsHide ();
-
-                this._leave_event = this.actor.connect('leave-event', Lang.bind(this, this._hideDock));
-                this._enter_event = this.actor.connect('enter-event', Lang.bind(this, this._showDock));
-                this._redisplay();
-        }));
-
-        this._settings.connect('changed::'+DOCK_AUTOHIDE_ANIMATION_TIME_KEY, Lang.bind(this,function (){
-                if (!this._settings)
-                    return;
-
-                autohide_animation_time = this._settings.get_double(DOCK_AUTOHIDE_ANIMATION_TIME_KEY);
-        }));
+        Main.layoutManager.addChrome(this.actor, { affectsStruts: !DOCK_AUTOHIDE });
 
         this._leave_event = this.actor.connect('leave-event', Lang.bind(this, this._hideDock));
         this._enter_event = this.actor.connect('enter-event', Lang.bind(this, this._showDock));
@@ -501,14 +428,13 @@ Dock.prototype = {
         this.actor.destroy();
 
         // Break reference cycles
-        this._settings = null;
         this._appSystem = null;
         this._tracker = null;
     },
 
     // fuctions hide
     _restoreHideDock: function(){
-        hideable = this._settings.get_boolean(DOCK_HIDE_KEY);
+        hideable = DOCK_AUTOHIDE;
     },
 
     _disableHideDock: function (){
