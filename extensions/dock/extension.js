@@ -41,9 +41,9 @@ const AutoHideEffect = {
 const DOCK_POSITION = PositionMode.RIGHT;
 const DOCK_SIZE = 48;
 const DOCK_AUTOHIDE = true;
-const DOCK_EFFECTHIDE = AutoHideEffect.MOVE;
+const DOCK_EFFECTHIDE = AutoHideEffect.RESIZE;
 const DOCK_AUTOHIDE_ANIMATION_TIME = 0.3;
-const DISPLAY_MONITOR = 1;
+const DISPLAY_MONITOR = 0;
 // Do not change anything below this line (it is intentionally duplicate to keep in
 // sync with master branch)
 
@@ -51,7 +51,7 @@ let position = PositionMode.RIGHT;
 let dockicon_size = 48;
 let hideable = true;
 let hideDock = true;
-let hideEffect = AutoHideEffect.RESIZE;
+let hideEffect = AutoHideEffect.MOVE;
 let autohide_animation_time = 0.3;
 let displayMonitor = -1;
 const DND_RAISE_APP_TIMEOUT = 500;
